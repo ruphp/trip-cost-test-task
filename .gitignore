@@ -1,2 +1,5 @@
 data/app.sqlite
 vendor/
+.idea/
+submission/*.sqlite
+*.mp4

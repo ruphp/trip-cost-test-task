@@ -1,0 +1,15 @@
+name: test1_trip_cost
+
+services:
+  app:
+    image: test1_php:8.4-cli
+    container_name: test1_trip_cost_app
+    build:
+      context: .
+      dockerfile: Dockerfile
+    working_dir: /app
+    volumes:
+      - ./:/app
+    ports:
+      - "8000:8000"
+    command: ["sh", "-lc", "if [ ! -f data/app.sqlite ]; then php bin/reset-db.php; fi; exec php -S 0.0.0.0:8000 -t public"]

@@ -1,0 +1,61 @@
+{
+    "period": "2026-10",
+    "clients": [
+        {
+            "client_id": 1,
+            "name": "ООО «Хрустим»",
+            "invoice_id": 12,
+            "before": "7083.88",
+            "after": "73910.28",
+            "diff": "66826.40",
+            "action": "updated"
+        },
+        {
+            "client_id": 2,
+            "name": "ООО «Родник»",
+            "invoice_id": 10,
+            "before": "173092.95",
+            "after": "56404.48",
+            "diff": "-116688.47",
+            "action": "updated"
+        },
+        {
+            "client_id": 3,
+            "name": "ООО «Молочный двор»",
+            "invoice_id": 7,
+            "before": "101736.72",
+            "after": "57005.66",
+            "diff": "-44731.06",
+            "action": "updated"
+        },
+        {
+            "client_id": 4,
+            "name": "ООО «Пекарня Злата»",
+            "invoice_id": 9,
+            "before": "17894.80",
+            "after": "29953.53",
+            "diff": "12058.73",
+            "action": "updated"
+        },
+        {
+            "client_id": 5,
+            "name": "ООО «Упаковка Плюс»",
+            "invoice_id": 11,
+            "before": "24392.58",
+            "after": "98225.80",
+            "diff": "73833.22",
+            "action": "updated"
+        },
+        {
+            "client_id": 6,
+            "name": "ООО «Мясной ряд»",
+            "invoice_id": 8,
+            "before": "130409.85",
+            "after": "139111.05",
+            "diff": "8701.20",
+            "action": "updated"
+        }
+    ],
+    "total_before": "454610.78",
+    "total_after": "454610.80"
+}

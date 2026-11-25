@@ -1,0 +1,137 @@
+[
+    {
+        "id": 15,
+        "trip_id": 5,
+        "volume_m3": 0
+    },
+    {
+        "id": 16,
+        "trip_id": 5,
+        "volume_m3": 3.8
+    },
+    {
+        "id": 17,
+        "trip_id": 5,
+        "volume_m3": 2.4
+    },
+    {
+        "id": 18,
+        "trip_id": 6,
+        "volume_m3": 4
+    },
+    {
+        "id": 19,
+        "trip_id": 6,
+        "volume_m3": 4
+    },
+    {
+        "id": 20,
+        "trip_id": 6,
+        "volume_m3": 4
+    },
+    {
+        "id": 21,
+        "trip_id": 7,
+        "volume_m3": 10.6
+    },
+    {
+        "id": 22,
+        "trip_id": 7,
+        "volume_m3": 8
+    },
+    {
+        "id": 23,
+        "trip_id": 7,
+        "volume_m3": 2
+    },
+    {
+        "id": 24,
+        "trip_id": 7,
+        "volume_m3": 3.8
+    },
+    {
+        "id": 25,
+        "trip_id": 7,
+        "volume_m3": 3.1
+    },
+    {
+        "id": 26,
+        "trip_id": 8,
+        "volume_m3": 1
+    },
+    {
+        "id": 27,
+        "trip_id": 8,
+        "volume_m3": 1
+    },
+    {
+        "id": 28,
+        "trip_id": 8,
+        "volume_m3": 1
+    },
+    {
+        "id": 29,
+        "trip_id": 9,
+        "volume_m3": 2.1
+    },
+    {
+        "id": 30,
+        "trip_id": 9,
+        "volume_m3": 0.5
+    },
+    {
+        "id": 31,
+        "trip_id": 9,
+        "volume_m3": 4
+    },
+    {
+        "id": 32,
+        "trip_id": 9,
+        "volume_m3": 7.5
+    },
+    {
+        "id": 33,
+        "trip_id": 9,
+        "volume_m3": 2.4
+    },
+    {
+        "id": 34,
+        "trip_id": 10,
+        "volume_m3": 1
+    },
+    {
+        "id": 35,
+        "trip_id": 10,
+        "volume_m3": 1
+    },
+    {
+        "id": 36,
+        "trip_id": 11,
+        "volume_m3": 4.5
+    },
+    {
+        "id": 37,
+        "trip_id": 11,
+        "volume_m3": 3.5
+    },
+    {
+        "id": 38,
+        "trip_id": 11,
+        "volume_m3": 2
+    },
+    {
+        "id": 39,
+        "trip_id": 12,
+        "volume_m3": 1
+    },
+    {
+        "id": 40,
+        "trip_id": 12,
+        "volume_m3": 3.6
+    },
+    {
+        "id": 41,
+        "trip_id": 12,
+        "volume_m3": 1
+    }
+]
