@@ -59,7 +59,7 @@ page_header('Рейс ' . $trip['number']);
     </tbody>
 </table>
 
-<h2>Доли клиентов</h2>
+<h2>Распределение стоимости по весу (старый расчёт)</h2>
 <table class="grid">
     <thead>
     <tr>
@@ -84,4 +84,22 @@ page_header('Рейс ' . $trip['number']);
     </tr>
     </tbody>
 </table>
+
+<h2>Распределение стоимости по объёму (новый расчёт)</h2>
+<table class="grid" id="trip-split" data-trip-id="<?= $id ?>">
+    <thead>
+    <tr>
+        <th>Клиент</th>
+        <th class="r">Число грузов</th>
+        <th class="r">Объём, м³</th>
+        <th class="r">Доля, %</th>
+        <th class="r">Сумма, ₽</th>
+    </tr>
+    </thead>
+    <tbody>
+        <tr><td colspan="5" class="empty">Загрузка распределения...</td></tr>
+    </tbody>
+</table>
+<noscript><p>Для загрузки распределения стоимости включите JavaScript.</p></noscript>
+<script src="js/trip-split.js"></script>
 <?php page_footer();
