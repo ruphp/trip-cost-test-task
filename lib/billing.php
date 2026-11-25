@@ -36,6 +36,83 @@ function calc_share($trip_id)
 }
 
 /**
+ * Распределить стоимость рейса пропорционально объёму грузов клиентов.
+ *
+ * Возвращает [client_id => [client_id, name, cargo_count, weight_kg, volume_m3, share, amount]].
+ * share - доля от 0 до 1. Суммы распределяются в копейках методом наибольшего остатка.
+ * При равных остатках дополнительную копейку получает клиент с меньшим client_id.
+ * Возвращает null, если рейс не найден.
+ * При нулевом общем объёме или отрицательной стоимости/объёме выбрасывает DomainException.
+ */
+function calc_trip_split($trip_id)
+{
+    $trip_id = (int)$trip_id;
+    $trip = db()->query("SELECT cost FROM trips WHERE id = $trip_id")->fetch();
+    if (!$trip) {
+        return null;
+    }
+
+    $rows = db()->query("SELECT c.client_id, cl.name, COUNT(*) AS cargo_count,
+            COALESCE(SUM(c.volume_m3), 0) AS volume_m3,
+            MIN(c.volume_m3) AS min_volume_m3
+        FROM cargo c
+        JOIN clients cl ON cl.id = c.client_id
+        WHERE c.trip_id = $trip_id
+        GROUP BY c.client_id, cl.name
+        ORDER BY c.client_id")->fetchAll();
+
+    if ($trip['cost'] < 0) {
+        throw new DomainException('Стоимость рейса не может быть отрицательной.');
+    }
+
+    $total_volume = 0;
+    foreach ($rows as $row) {
+        if ($row['min_volume_m3'] < 0) {
+            throw new DomainException('Объём груза не может быть отрицательным.');
+        }
+        $total_volume += $row['volume_m3'];
+    }
+    if ($total_volume <= 0) {
+        throw new DomainException('Для распределения стоимости нужен положительный общий объём.');
+    }
+
+    $total_cents = (int)round($trip['cost'] * 100);
+    $remaining_cents = $total_cents;
+    $result = array();
+    $remainders = array();
+    foreach ($rows as $row) {
+        $client_id = (int)$row['client_id'];
+        $share = $row['volume_m3'] / $total_volume;
+        $exact_cents = $total_cents * $share;
+        $amount_cents = (int)floor($exact_cents);
+        $remaining_cents -= $amount_cents;
+        $result[$client_id] = array(
+            'client_id' => $client_id,
+            'name' => $row['name'],
+            'cargo_count' => (int)$row['cargo_count'],
+            'volume_m3' => $row['volume_m3'],
+            'share' => $share,
+            'amount' => $amount_cents,
+        );
+        $remainders[] = array('client_id' => $client_id, 'remainder' => $exact_cents - $amount_cents);
+    }
+
+    usort($remainders, function ($a, $b) {
+        $order = $b['remainder'] <=> $a['remainder'];
+        return $order !== 0 ? $order : $a['client_id'] <=> $b['client_id'];
+    });
+    for ($i = 0; $i < $remaining_cents; $i++) {
+        $result[$remainders[$i]['client_id']]['amount']++;
+    }
+    foreach ($result as &$client) {
+        $client['amount'] /= 100;
+    }
+    unset($client);
+
+    return $result;
+}
+
+/**
  * Сформировать счета клиентов за месяц.
  *
  * Для каждого клиента берутся рейсы месяца (по дате отправления, кроме отменённых) и его доля в каждом из них.
