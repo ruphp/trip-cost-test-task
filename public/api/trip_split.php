@@ -23,7 +23,17 @@ if ($clients === null) {
     json_out(array('error' => 'Рейс не найден.'), 404);
 }
 
+$st = db()->prepare('SELECT number, cost FROM trips WHERE id = ?');
+$st->execute(array($trip_id));
+$trip = $st->fetch();
+foreach ($clients as &$client) {
+    $client['amount'] = number_format($client['amount'], 2, '.', '');
+}
+unset($client);
+
 json_out(array(
     'trip_id' => $trip_id,
+    'number' => $trip['number'],
+    'cost' => number_format($trip['cost'], 2, '.', ''),
     'clients' => array_values($clients),
 ));

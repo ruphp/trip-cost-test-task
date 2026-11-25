@@ -34,8 +34,11 @@ $(function () {
             });
 
             body.append($('<tr>', { 'class': 'total' })
-                .append($('<td>', { colspan: 4 }).text('Итого'))
+                .append($('<td>', { colspan: 4 }).text('Итого по клиентам'))
                 .append($('<td>', { 'class': 'r' }).text(money(totalCents / 100))));
+            body.append($('<tr>', { 'class': 'total' })
+                .append($('<td>', { colspan: 4 }).text('Стоимость рейса'))
+                .append($('<td>', { 'class': 'r' }).text(money(data.cost))));
         })
         .fail(function (xhr) {
             showMessage(xhr.responseJSON && xhr.responseJSON.error
