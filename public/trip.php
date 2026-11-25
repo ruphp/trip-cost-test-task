@@ -33,6 +33,8 @@ page_header('Рейс ' . $trip['number']);
 </table>
 
 <h2>Грузы</h2>
+<form id="cargo-volumes" class="actions" action="api/cargo_volumes.php" method="post">
+<input type="hidden" name="trip_id" value="<?= $id ?>">
 <table class="grid">
     <thead>
     <tr>
@@ -49,7 +51,11 @@ page_header('Рейс ' . $trip['number']);
             <td><?= h($c['client_name']) ?></td>
             <td><?= h($c['description']) ?></td>
             <td class="r"><?= num($c['weight_kg']) ?></td>
-            <td class="r"><?= $c['volume_m3'] !== null ? num($c['volume_m3'], 1) : '' ?></td>
+            <td class="r">
+                <input type="number" name="volumes[<?= (int)$c['id'] ?>]" min="0" step="any"
+                       value="<?= h($c['volume_m3']) ?>" placeholder="Не заполнено"
+                       aria-label="Объём груза <?= h($c['description']) ?>, м³">
+            </td>
             <td class="r"><?= $c['pallets'] !== null ? $c['pallets'] : '' ?></td>
         </tr>
     <?php endforeach; ?>
@@ -58,6 +64,13 @@ page_header('Рейс ' . $trip['number']);
     <?php endif; ?>
     </tbody>
 </table>
+<?php if ($cargo): ?>
+    <p>Введите объём каждой позиции груза в м³. Пустое поле означает, что объём не заполнен.</p>
+    <button type="submit">Сохранить объёмы</button>
+<?php endif; ?>
+<p id="cargo-volume-message" role="status" aria-live="polite"></p>
+</form>
+<p><a href="billing.php?period=<?= h(substr($trip['departure_date'], 0, 7)) ?>">Предпросмотр счетов за месяц рейса</a></p>
 
 <h2>Распределение стоимости по весу (старый расчёт)</h2>
 <table class="grid">

@@ -4,11 +4,12 @@ $(function () {
 
     function showMessage(message) {
         body.empty().append(
-            $('<tr>').append($('<td>', { colspan: 6, 'class': 'empty' }).text(message))
+            $('<tr>').append($('<td>', { colspan: 5, 'class': 'empty' }).text(message))
         );
     }
 
-    $.getJSON('api/trip_split.php', { trip_id: table.data('trip-id') })
+    function loadSplit() {
+        return $.getJSON('api/trip_split.php', { trip_id: table.data('trip-id') })
         .done(function (data) {
             if (!data.clients.length) {
                 showMessage('Грузов нет');
@@ -41,4 +42,27 @@ $(function () {
                 ? xhr.responseJSON.error
                 : 'Не удалось загрузить распределение стоимости. Обновите страницу.');
         });
+    }
+
+    $('#cargo-volumes').on('submit', function (event) {
+        event.preventDefault();
+        var form = $(this);
+        var data = form.serialize();
+        var message = $('#cargo-volume-message');
+        form.find('input, button').prop('disabled', true);
+        message.text('Сохранение объёмов...');
+        $.ajax({ url: form.attr('action'), method: 'POST', dataType: 'json', data: data })
+            .done(function () {
+                message.text('Объёмы сохранены. Проверьте и примените пересчёт счетов за месяц.');
+                showMessage('Загрузка распределения...');
+                loadSplit();
+            })
+            .fail(function (xhr) {
+                message.text(xhr.responseJSON && xhr.responseJSON.error
+                    ? xhr.responseJSON.error : 'Не удалось сохранить объёмы. Попробуйте ещё раз.');
+            })
+            .always(function () { form.find('input, button').prop('disabled', false); });
+    });
+
+    loadSplit();
 });

@@ -161,3 +161,149 @@ function billing_run_period($period)
 
     return array('created' => $created, 'updated' => $updated);
 }
+
+/** Собрать единый план пересчёта по объёму для preview и apply. Суммы в копейках. */
+function billing_plan_period($period)
+{
+    if (!is_string($period) || !preg_match('/\A(?!0000)[0-9]{4}-(0[1-9]|1[0-2])\z/', $period)) {
+        throw new InvalidArgumentException('Укажите месяц в формате YYYY-MM.');
+    }
+
+    $db = db();
+    $clients = array();
+    $st = $db->prepare('SELECT i.id, i.client_id, i.total, cl.name
+        FROM invoices i JOIN clients cl ON cl.id = i.client_id
+        WHERE i.period = ? ORDER BY i.client_id, i.id');
+    $st->execute(array($period));
+    foreach ($st->fetchAll() as $invoice) {
+        $client_id = (int)$invoice['client_id'];
+        if (isset($clients[$client_id])) {
+            throw new DomainException('У клиента ' . $client_id . ' несколько счетов за этот месяц.');
+        }
+        $clients[$client_id] = array(
+            'client_id' => $client_id,
+            'name' => $invoice['name'],
+            'invoice_id' => (int)$invoice['id'],
+            'before' => (int)round($invoice['total'] * 100),
+            'after' => 0,
+            'lines' => array(),
+        );
+    }
+
+    $st = $db->prepare("SELECT DISTINCT t.id FROM trips t
+        JOIN cargo c ON c.trip_id = t.id
+        WHERE t.departure_date LIKE ? AND t.status <> 'cancelled'
+        ORDER BY t.id");
+    $st->execute(array($period . '%'));
+    foreach ($st->fetchAll(PDO::FETCH_COLUMN) as $trip_id) {
+        try {
+            $split_clients = calc_trip_split($trip_id);
+        } catch (DomainException $e) {
+            throw new DomainException('Рейс id=' . $trip_id . ': ' . $e->getMessage(), 0, $e);
+        }
+        foreach ($split_clients as $client_id => $split) {
+            if (!isset($clients[$client_id])) {
+                $clients[$client_id] = array(
+                    'client_id' => (int)$client_id,
+                    'name' => $split['name'],
+                    'invoice_id' => null,
+                    'before' => 0,
+                    'after' => 0,
+                    'lines' => array(),
+                );
+            }
+            $cents = (int)round($split['amount'] * 100);
+            $clients[$client_id]['lines'][] = array('trip_id' => (int)$trip_id, 'cents' => $cents);
+            $clients[$client_id]['after'] += $cents;
+        }
+    }
+
+    $st = $db->prepare('SELECT trip_id, amount FROM invoice_lines WHERE invoice_id = ? ORDER BY trip_id, id');
+    foreach ($clients as &$client) {
+        if ($client['invoice_id'] === null) {
+            $client['action'] = 'created';
+            continue;
+        }
+        $st->execute(array($client['invoice_id']));
+        $before_lines = array();
+        foreach ($st->fetchAll() as $line) {
+            $before_lines[] = array('trip_id' => (int)$line['trip_id'], 'cents' => (int)round($line['amount'] * 100));
+        }
+        $client['action'] = $client['before'] === $client['after'] && $before_lines === $client['lines']
+            ? 'unchanged' : 'updated';
+    }
+    unset($client);
+    ksort($clients, SORT_NUMERIC);
+
+    return $clients;
+}
+
+/** Подготовить публичный ответ. Денежные значения - строки с двумя знаками. */
+function billing_period_result($period, $clients)
+{
+    $result = array('period' => $period, 'clients' => array());
+    $total_before = 0;
+    $total_after = 0;
+    foreach ($clients as $client) {
+        $total_before += $client['before'];
+        $total_after += $client['after'];
+        $result['clients'][] = array(
+            'client_id' => $client['client_id'],
+            'name' => $client['name'],
+            'invoice_id' => $client['invoice_id'],
+            'before' => number_format($client['before'] / 100, 2, '.', ''),
+            'after' => number_format($client['after'] / 100, 2, '.', ''),
+            'diff' => number_format(($client['after'] - $client['before']) / 100, 2, '.', ''),
+            'action' => $client['action'],
+        );
+    }
+    $result['total_before'] = number_format($total_before / 100, 2, '.', '');
+    $result['total_after'] = number_format($total_after / 100, 2, '.', '');
+    return $result;
+}
+
+/** Предпросмотр не изменяет счета и строки счетов. */
+function billing_preview_period($period)
+{
+    return billing_period_result($period, billing_plan_period($period));
+}
+
+/** Применить план целиком. Неизменившиеся счета и их строки не перезаписываются. */
+function billing_apply_period($period)
+{
+    $db = db();
+    $db->beginTransaction();
+    try {
+        $clients = billing_plan_period($period);
+        $counts = array('created' => 0, 'updated' => 0, 'unchanged' => 0);
+        $insert_invoice = $db->prepare("INSERT INTO invoices (client_id, period, status, total, created_at)
+            VALUES (?, ?, 'draft', 0, datetime('now', 'localtime'))");
+        $delete_lines = $db->prepare('DELETE FROM invoice_lines WHERE invoice_id = ?');
+        $insert_line = $db->prepare('INSERT INTO invoice_lines (invoice_id, trip_id, amount) VALUES (?, ?, ?)');
+        $update_total = $db->prepare('UPDATE invoices SET total = ? WHERE id = ?');
+
+        foreach ($clients as &$client) {
+            $counts[$client['action']]++;
+            if ($client['action'] === 'unchanged') {
+                continue;
+            }
+            if ($client['action'] === 'created') {
+                $insert_invoice->execute(array($client['client_id'], $period));
+                $client['invoice_id'] = (int)$db->lastInsertId();
+            } else {
+                $delete_lines->execute(array($client['invoice_id']));
+            }
+            foreach ($client['lines'] as $line) {
+                $insert_line->execute(array($client['invoice_id'], $line['trip_id'], $line['cents'] / 100));
+            }
+            $update_total->execute(array($client['after'] / 100, $client['invoice_id']));
+        }
+        unset($client);
+        $result = array_merge(billing_period_result($period, $clients), $counts);
+        $db->commit();
+        return $result;
+    } catch (Throwable $e) {
+        $db->rollBack();
+        throw $e;
+    }
+}

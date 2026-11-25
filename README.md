@@ -13,11 +13,24 @@ php -S localhost:8000 -t public
 
 Открыть http://localhost:8000.
 
-То же через Docker:
+То же через Docker (Windows / macOS / Linux):
 
 ```bash
 docker run --rm -it -p 8000:8000 -v "$PWD":/app -w /app php:8.4-cli \
     sh -c "php bin/reset-db.php && php -S 0.0.0.0:8000 -t public"
+
+### Docker Compose (с префиксами `test1_`)
+
+Чтобы контейнеры и образы имели префиксы `test1_`, используем `docker-compose.yml` и локальный `Dockerfile`.
+
+Запуск:
+
+```bash
+docker compose build
+docker compose up
+```
+
+После старта открыть http://localhost:8000.
 ```
 
 `php bin/reset-db.php` пересоздаёт базу `data/app.sqlite` из `data/schema.sql` и `data/seed.sql`. Так можно вернуть

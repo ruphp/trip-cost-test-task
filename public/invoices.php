@@ -71,9 +71,9 @@ page_header('Счета');
     </tbody>
 </table>
 
-<h2>Сформировать счета за месяц</h2>
-<form class="actions" method="post" action="billing_run.php">
-    <input type="month" name="period" value="<?= h($period) ?>">
-    <button type="submit">Сформировать</button>
+<h2>Пересчитать счета по объёму</h2>
+<form class="actions" method="get" action="billing.php">
+    <input type="month" name="period" value="<?= h($period ?: date('Y-m')) ?>" required>
+    <button type="submit">Предпросмотр счетов</button>
 </form>
 <?php page_footer();
